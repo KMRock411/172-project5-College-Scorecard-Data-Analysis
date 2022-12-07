@@ -1,6 +1,8 @@
 
 # Project Work Plan:
 ## https://docs.google.com/document/d/1Jg1GWl4khZ-XFOgXCKFrbKeQtSDUw5sGYPAAqHqt4P0/edit?usp=sharing
+# Design Document:
+## https://docs.google.com/document/d/1JLxYwo7uKhEvkHrsrxbt2VEhj-PrCNezDJEbzNp4Etc/edit?usp=sharing
 # README from fork:
 # College Scorecard Data Analysis
 ![Title Image](https://raw.githubusercontent.com/kiseki1107/College-Scorecard-Analysis/master/Resources/Images/College_Scorecard_Title.png)
