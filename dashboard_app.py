@@ -1,100 +1,47 @@
-from flask import Flask, request
-# from image_api import fetch_mars_images
-# from random import randint
-
-import io
-import random
-from flask import Response
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
+import pandas as pd
+import plotly.express as px
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from PlotAxesCollection import PlotAxesCollection
+from Folder import Folder
 
 
-app = Flask(__name__)
+folder = Folder(input('Please type the name of the folder you wish to access:'))
+    # folder = Folder('General') #USE THIS FOR EASY STARTUP (no user input)
+print(folder.display_files())
+    #display file names for user to pick from
 
+file = folder.select_file(input('Please type the name of the file you wish to use:'))
+    # file = folder.select_file('Schools_DF') #USE THIS FOR EASY STARTUP (no user input)
 
-@app.route('/')
-def home():
-    return TEST_HTML
+columns = PlotAxesCollection(pd.read_csv("Resources/CSV/"+folder.folder_name+"/"+file+".csv"))
+    #get list of headers in csv file and use them as column names
+data = pd.read_csv("Resources/CSV/"+folder.folder_name+"/"+file+".csv", usecols=columns.plot_axes_list)
+    #create pandas Dataframe from chosen csv file
 
-TEST_HTML = """
-<html><body>
-     <h2>Test Plot</h2>
-         <img src="/plot.png" alt="my plot"><br>
- </body></html>
-"""
+app = dash.Dash()
+app.layout = html.Div([
+    dcc.Dropdown( #creates dropdown menu at top of webpage for user to choose from
+        id='demo-dropdown',
+        options=columns.plot_axes_list, #get possible column names from headers in chosen csv file
+        value=[columns.plot_axes_list[0], columns.plot_axes_list[1]], #use first and second header as defaults
+        multi=True #choose more than 1 chart element
+    ),
 
-@app.route('/plot.png')
-def plot_png():
-    fig = create_figure()
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
+    html.Hr(),
+    dcc.Graph(id='display-selected-values'), #create graph
 
-def create_figure():
-    fig = Figure()
-    axis = fig.add_subplot(1, 1, 1)
-    xs = range(100)
-    ys = range(100,200) #[random.randint(1, 50) for x in xs]
-    axis.plot(xs, ys)
+])
+
+@app.callback(
+    dash.dependencies.Output('display-selected-values', 'figure'), #update figure object
+    [dash.dependencies.Input('demo-dropdown', 'value'), #first choice from dropdown
+     dash.dependencies.Input('demo-dropdown', 'value2')]) #second choice from dropdown
+def update_output(value,value2):
+    fig = px.scatter(data, x=value, y=value2) #use first and second choice from dropdown as x and y axes
     return fig
 
 
-
-
-
-
-# <img src="/plot.png" alt="my plot">
-
-
-
-#
-#
-# @app.route('/')
-# def home():
-#     return HOME_HTML
-#
-#
-# HOME_HTML = """
-#  <html><body>
-#      <h2>Random Mars Image</h2>
-#      <form action="/randomimage">
-#          <img src="http://mars.jpl.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/01000/opgs/edr/fcam/FLB_486265257EDR_F0481570FHAZ00323M_.JPG" alt="Mars Rover Image" width="500" height="500"><br>
-#          Adjust Width (100 to 1000): <input type='number' name='width' min='100' max='1000'>
-#          Adjust Height (100 to 1000) <input type='number' name='height' min='100' max='1000'>
-#          <input type='submit' value='Submit'>
-#      </form>
-#  </body></html>"""
-#
-#
-# @app.route('/randomimage')
-# def randomimage():
-#     width = request.args.get('width', '')
-#     height = request.args.get('height', '')
-#     json = fetch_mars_images(randint(1,20))
-#     json_dict_index = randint(0,len(json)-1)
-#     img = json[json_dict_index].get('img_src')
-#
-#     # xpoints = np.array([1, 8])
-#     # ypoints = np.array([3, 10])
-#     #
-#     # plot_obj = plt.plot(xpoints, ypoints)
-#     # graph = plt.show()
-#
-#     return IMG_HTML.format(img,width,height)
-#
-#
-# IMG_HTML = """
-#  <html><body>
-#      <h2>Random Mars Image</h2>
-#      <form action="/randomimage">
-#          <img src="{0}" alt="Mars Rover Image" width="{1}" height="{2}"><br>
-#          Adjust Width (100 to 1000): <input type='number' name='width' min='100' max='1000'>
-#          Adjust Height (100 to 1000) <input type='number' name='height' min='100' max='1000'>
-#          <input type='submit' value='Submit'>
-#      </form>
-#  </body></html>
-#  """
-
-if __name__ == "__main__":
-    # Launch the Flask dev server
-    app.run(host="localhost", port=5001, debug=True)
+if __name__ == '__main__':
+    app.run_server()
